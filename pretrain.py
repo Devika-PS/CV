@@ -27,6 +27,8 @@ from data.data_augmentation import TrainAugmentation, ValAugmentation
 
 global_step = 0
 
+os.environ["TORCH_HOME"] = "../cache"
+os.environ["MPLCONFIGDIR"] = "../cache"
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
