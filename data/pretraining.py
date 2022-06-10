@@ -1,6 +1,6 @@
 import os
 import torch
-from Pillow import Image
+from PIL import Image
 from torch.utils.data._utils.collate import default_collate
 
 def custom_collate(batch):
