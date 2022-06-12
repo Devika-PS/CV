@@ -10,13 +10,15 @@ from utils import check_dir
 from models.pretraining_backbone import ResNet18Backbone
 from data.pretraining import DataReaderPlainImg
 from tqdm import tqdm
-
+os.environ["TORCH_HOME"] = "/project/dl2022s/panneer/cache"
+os.environ["MPLCONFIGDIR"] = "/project/dl2022s/panneer/cache"
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights-init', type=str,
                         default="")
     parser.add_argument("--size", type=int, default=256, help="size of the images to feed the network")
     parser.add_argument('--output-root', type=str, default='results')
+    parser.add_argument('--data_folder', type=str, help="folder containing the data (crops)", default='/project/dl2022s/panneer/crops/images/')
     args = parser.parse_args()
 
     args.output_folder = check_dir(
@@ -31,9 +33,17 @@ def main(args):
     # model
     #raise NotImplementedError("TODO: build model and load weights snapshot")
     model = ResNet18Backbone(pretrained=False).cuda()
-    pretrained_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), args.weights_init)
-    pretrained = torch.load(pretrained_path)
-    model.load_state_dict(pretrained['model'])
+    #pretrained_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), args.weights_init)
+    pretrained = torch.load('/project/dl2022s/panneer/results/lr0.0005_bs48__local/models/ckpt_epoch1.pth')
+    
+
+    backbone = { key.replace("backbone.", "") : value
+        for key, value in pretrained["teacher"].items() if not key.startswith("head")}
+    model.load_state_dict(backbone)
+    
+
+    #model.load_state_dict(torch.load('/project/dl2022s/panneer/results/lr0.0005_bs48__local/models/ckpt_epoch1.pth', map_location=torch.device('cuda')))
+
 
     # for neares neighbors we don't need the last fc layer
     model = torch.nn.Sequential(*list(model.children())[:-1])
@@ -91,15 +101,18 @@ def find_nn(model, query_img, loader, k):
         closest_dist: the L2 distance of each NN to the features of the query image
     """
     #raise NotImplementedError("TODO: nearest neighbors retrieval")
-    query_output = model(query_img)['out']
+    #query_output = model(query_img)['out']
+    query_output = model(query_img)
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     t = tqdm(loader)
     distances = []
     for images in t:
         images = images.to(device)
-        output = model(images)['out']
-        d = torch.norm(query_output - output, dim=1, p=None)
+        output = model(images)
+        print(output.shape)
+        d = torch.norm(query_output - output, p=2)
+        print(d.shape, d)
         distances.append(d.item())
 
     distances = np.array(distances)

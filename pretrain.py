@@ -27,15 +27,15 @@ from data.data_augmentation import TrainAugmentation, ValAugmentation
 
 global_step = 0
 
-os.environ["TORCH_HOME"] = "../cache"
-os.environ["MPLCONFIGDIR"] = "../cache"
+os.environ["TORCH_HOME"] = "/project/dl2022s/panneer/cache"
+os.environ["MPLCONFIGDIR"] = "/project/dl2022s/panneer/cache"
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_folder', type=str, help="folder containing the data (crops)")
+    parser.add_argument('--data_folder', type=str, help="folder containing the data (crops)", default='/project/dl2022s/panneer/crops/images/256')
     parser.add_argument('--output-root', type=str, default='results')
     parser.add_argument('--epochs', type=int, default=10, help='number of epochs')
-    parser.add_argument('--bs', type=int, default=128, help='batch_size')
+    parser.add_argument('--bs', type=int, default=48, help='batch_size')
     parser.add_argument('--dataset-size', type=int, default=60000)
     parser.add_argument('--schedule', type=str, default="cosine")
     parser.add_argument('--snapshot-freq', type=int, default=1, help='how often to save models')
@@ -71,6 +71,7 @@ def parse_arguments():
     return args
 
 def main(args):
+    print(os.path)
     # ============ building student and teacher networks ... ============
     teacher = ResNet18Backbone(pretrained=True)
     student = ResNet18Backbone(pretrained=True)
@@ -89,7 +90,7 @@ def main(args):
     #raise NotImplementedError("TODO: load weight initialization")
     for p in teacher.parameters():
         p.requires_grad = False
-    print(f"Student and Teacher are built: they are both {args.arch} network.")
+    #print(f"Student and Teacher are built: they are both network.")
 
     # with torch.no_grad():
     #     teacher.load_state_dict(student)
@@ -193,7 +194,7 @@ def train(data_loader, t_model, s_model, criterion, optimizer, lr_schedule, wd_s
             loss = criterion(student_output, teacher_output, epoch)
 
         if not math.isfinite(loss.item()):
-            print("Loss is {}, stopping training".format(loss.item()), force=True)
+            #print("Loss is {}, stopping training".format(loss.item()), force=True)
             sys.exit(1)
 
         # student update
@@ -206,7 +207,7 @@ def train(data_loader, t_model, s_model, criterion, optimizer, lr_schedule, wd_s
         with torch.no_grad():
             #raise NotImplementedError("TODO: load weight initialization")
             m = momentum_schedule[it]  # momentum parameter
-            for param_q, param_k in zip(s_model.module.parameters(), t_model.parameters()):
+            for param_q, param_k in zip(s_model.parameters(), t_model.parameters()):
                 param_k.data.mul_(m).add_((1 - m) * param_q.detach().data)
 
         loss_meter.add(loss.item())
@@ -245,6 +246,7 @@ def validate(loader, t_model, s_model, criterion, epoch, args, log=None):
         alpha=0.3
     )
     plt.savefig(os.path.join(args.model_folder, 't_sne_epoch{}.eps'.format(epoch)))
+    plt.savefig(os.path.join(args.model_folder, 't_sne_epoch{}.png'.format(epoch)))
 
 class DINOLoss(torch.nn.Module):
     def __init__(self, out_dim, ncrops, warmup_teacher_temp, teacher_temp,

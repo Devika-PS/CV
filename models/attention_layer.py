@@ -55,27 +55,27 @@ class ScaleDotProdAttention(nn.Module):
         # Matrices can be seen as linear layers without bias
         self.W_Q = nn.Linear(encoder_dim, att_size, bias=False)
         self.W_K = nn.Linear(encoder_dim, att_size, bias=False)
-        self.W_V = nn.Linear(encoder_dim, att_size, bias=False)
+        self.W_V = nn.Linear(encoder_dim, encoder_dim, bias=False)
         self.softmax = nn.Softmax(1)
         self.scale_score = 1. / float(att_size)** 0.5
 
     def forward(self, encoder_output, cls_vector):
         # encoder_output ------ torch.Size([Bs, hxw, encoder_dim])
-        # cls_vector ------ torch.Size([1, 512])
+        # cls_vector ------ torch.Size([Bs, 512])
 
         #raise NotImplementedError("TODO: Calculate query, key and vector")
-        query = self.W_Q(encoder_output, cls_vector)
-        key = self.W_K(encoder_output, cls_vector)
-        value = self.W_V(encoder_output, cls_vector)
+        query = self.W_Q(cls_vector)
+        key = self.W_K(encoder_output)
+        value = self.W_V(encoder_output)
 
-        # query ------ torch.Size([1, att_size])
+        # query ------ torch.Size([Bs, att_size])
         # key ------ torch.Size([Bs, hxw, att_size])
         # value ------ torch.Size([Bs, hxw, encoder_dim])
         
         #raise NotImplementedError("TODO: Calculate the dot product, \
            # multiply by the scale factor, apply softmax to get the attention")
         att = matmul(query, key.transpose(-1, -2))
-        att_scaled = att / cls_vector ** (1/float(2))
+        att_scaled = att * self.scale_score
         # att (mixed dot product) ------ torch.Size([Bs, hxw])
 
         alpha = self.softmax(att_scaled)
@@ -86,7 +86,7 @@ class ScaleDotProdAttention(nn.Module):
 
 if __name__ == "__main__":
     model = Attention(512, 'additive').cuda()
-    model.eval()
+    model.eval()    
     print(model)
     encoder_output = torch.randn(2, 256, 512).cuda()
     v_embedding = torch.randn(2, 512).cuda()
