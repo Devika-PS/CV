@@ -74,7 +74,8 @@ class ScaleDotProdAttention(nn.Module):
         
         #raise NotImplementedError("TODO: Calculate the dot product, \
            # multiply by the scale factor, apply softmax to get the attention")
-        att = matmul(query, key.transpose(-1, -2))
+        att = torch.bmm(query.unsqueeze(1), key.transpose(-1, -2)).squeeze(1)
+    
         att_scaled = att * self.scale_score
         # att (mixed dot product) ------ torch.Size([Bs, hxw])
 
@@ -85,7 +86,7 @@ class ScaleDotProdAttention(nn.Module):
         return context, alpha
 
 if __name__ == "__main__":
-    model = Attention(512, 'additive').cuda()
+    model = Attention(512, 'sdotprod').cuda()
     model.eval()    
     print(model)
     encoder_output = torch.randn(2, 256, 512).cuda()

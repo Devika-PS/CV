@@ -19,13 +19,13 @@ global_step = 0
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('data_folder', type=str, help="folder containing the data")
-    parser.add_argument('--pretrained_model_path', type=str, default='')
+    parser.add_argument('--data_folder', type=str, help="folder containing the data",  default="/project/dl2022s/panneer/COCO_mini5class_medium")
+    parser.add_argument('--pretrained_model_path', type=str, default='/project/dl2022s/panneer/binary_segmentation.pth')
     parser.add_argument('--output-root', type=str, default='results')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
-    parser.add_argument('--bs', type=int, default=32, help='batch_size')
+    parser.add_argument('--bs', type=int, default=16, help='batch_size')
     parser.add_argument('--att', type=str, default='sdotprod', help='Type of attention. Choose from {additive, cosine, dotprod, sdotprod}')
-    parser.add_argument('--size', type=int, default=256, help='image size')
+    parser.add_argument('--size', type=int, default=128, help='image size')
     parser.add_argument('--snapshot-freq', type=int, default=5, help='how often to save models')
     parser.add_argument('--exp-suffix', type=str, default="")
     args = parser.parse_args()
@@ -52,11 +52,11 @@ def main(args):
     img_size = (args.size, args.size)
 
     # model
-    pretrained_model = ResNet18Backbone(False)
+    pretrained_model = ResNet18Backbone(True)
     # TODO: Complete the documentation for AttSegmentator model
-    raise NotImplementedError("TODO: Build model AttSegmentator model")
+    #raise NotImplementedError("TODO: Build model AttSegmentator model")
     #model = None
-    model = AttSegmentator(5, pretrained_model.features, att_type='additive').cuda()
+    model = AttSegmentator(5, pretrained_model.features, att_type=args.att, img_size=img_size).cuda()
 
     if os.path.isfile(args.pretrained_model_path):
         model = load_from_weights(model, args.pretrained_model_path, logger)

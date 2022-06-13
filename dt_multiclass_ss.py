@@ -19,8 +19,8 @@ global_step = 0
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('data_folder', type=str, help="folder containing the data")
-    parser.add_argument('--pretrained_model_path', type=str, default='')
+    parser.add_argument('--data_folder', type=str, default="/project/dl2022s/panneer/COCO_mini5class_medium", help="folder containing the data")
+    parser.add_argument('--pretrained_model_path', type=str, default='/project/dl2022s/panneer/binary_segmentation.pth')
     parser.add_argument('--output-root', type=str, default='results')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
     parser.add_argument('--bs', type=int, default=32, help='batch_size')
